@@ -1,0 +1,188 @@
+/* ============================================================
+   Virtual Museum — Main CSS
+   Design System: CSS Custom Properties + BEM
+   ============================================================ */
+
+:root {
+    --vm-color-bg:         #FAFAF8;
+    --vm-color-surface:    #FFFFFF;
+    --vm-color-border:     #E5E1D8;
+    --vm-color-text:       #2C2C2C;
+    --vm-color-text-muted: #6B6460;
+    --vm-color-accent:     #8B4513;
+    --vm-color-accent-light: rgba(139, 69, 19, 0.1);
+    --vm-color-shadow:     rgba(0, 0, 0, 0.08);
+
+    --vm-font-family:      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, serif;
+    --vm-font-serif:       Georgia, 'Times New Roman', serif;
+
+    --vm-radius:           4px;
+    --vm-radius-lg:        8px;
+    --vm-spacing-xs:       0.25rem;
+    --vm-spacing-sm:       0.5rem;
+    --vm-spacing-md:       1rem;
+    --vm-spacing-lg:       1.5rem;
+    --vm-spacing-xl:       2rem;
+    --vm-spacing-2xl:      3rem;
+
+    --vm-transition:       0.2s ease;
+
+    /* Room-specific (overridden per room) */
+    --vm-room-color:       #8B4513;
+}
+
+/* ---- Reset / Base ---- */
+.vm-page {
+    font-family: var(--vm-font-family);
+    color: var(--vm-color-text);
+    background: var(--vm-color-bg);
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--vm-spacing-lg);
+}
+
+.vm-content {
+    line-height: 1.7;
+    font-size: 1.05rem;
+}
+
+.vm-empty {
+    text-align: center;
+    color: var(--vm-color-text-muted);
+    padding: var(--vm-spacing-2xl);
+    font-style: italic;
+}
+
+/* ---- Section Toggle ---- */
+.vm-section-title { margin: 0; }
+.vm-section-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--vm-spacing-sm);
+    background: none;
+    border: none;
+    border-bottom: 2px solid var(--vm-color-border);
+    padding: var(--vm-spacing-md) 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--vm-color-text);
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    transition: color var(--vm-transition);
+}
+.vm-section-toggle:hover { color: var(--vm-room-color, var(--vm-color-accent)); }
+.vm-section-toggle::after {
+    content: '▾';
+    margin-left: auto;
+    transition: transform var(--vm-transition);
+}
+.vm-section-toggle[aria-expanded="false"]::after { transform: rotate(-90deg); }
+.vm-section-count {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--vm-color-text-muted);
+}
+.vm-section-body { padding: var(--vm-spacing-lg) 0; }
+
+/* ---- Room Page ---- */
+.vm-room__header { position: relative; margin-bottom: var(--vm-spacing-xl); }
+.vm-room__cover { max-height: 400px; overflow: hidden; border-radius: var(--vm-radius-lg); }
+.vm-room__cover img { width: 100%; height: 400px; object-fit: cover; }
+.vm-room__hero-content { padding: var(--vm-spacing-lg) 0; }
+.vm-room__title { font-family: var(--vm-font-serif); font-size: 2.5rem; margin: 0 0 var(--vm-spacing-sm); color: var(--vm-room-color); }
+.vm-room__era { color: var(--vm-color-text-muted); font-style: italic; }
+.vm-room__description { background: var(--vm-color-surface); padding: var(--vm-spacing-lg); border-left: 4px solid var(--vm-room-color); border-radius: 0 var(--vm-radius) var(--vm-radius) 0; margin-bottom: var(--vm-spacing-xl); }
+.vm-room__contents { margin-top: var(--vm-spacing-xl); }
+.vm-room__section { margin-bottom: var(--vm-spacing-xl); }
+
+/* ---- Relation Badge ---- */
+.vm-relation-badge {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--vm-spacing-sm);
+    padding: var(--vm-spacing-md) var(--vm-spacing-lg);
+    background: var(--vm-color-surface);
+    border-left: 3px solid var(--vm-color-accent);
+    border-radius: 0 var(--vm-radius) var(--vm-radius) 0;
+    font-size: 0.875rem;
+    color: var(--vm-color-text-muted);
+    margin-top: var(--vm-spacing-xl);
+}
+.vm-relation-badge__text { white-space: nowrap; font-weight: 600; padding-top: 2px; }
+.vm-relation-badge__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--vm-spacing-xs);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.vm-relation-badge__list a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--vm-spacing-xs);
+    padding: 3px 10px;
+    background: var(--vm-color-bg);
+    border: 1px solid var(--vm-color-border);
+    border-radius: 2rem;
+    color: var(--vm-color-text);
+    text-decoration: none;
+    transition: border-color var(--vm-transition), color var(--vm-transition);
+    font-size: 0.825rem;
+}
+.vm-relation-badge__list a:hover {
+    border-color: var(--vm-color-accent);
+    color: var(--vm-color-accent);
+}
+
+/* ---- Breadcrumb ---- */
+.vm-breadcrumb { margin-bottom: var(--vm-spacing-lg); font-size: 0.875rem; }
+.vm-breadcrumb__list { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; list-style: none; margin: 0; padding: 0; }
+.vm-breadcrumb__item a { color: var(--vm-color-accent); text-decoration: none; }
+.vm-breadcrumb__item a:hover { text-decoration: underline; }
+.vm-breadcrumb__item--current span { color: var(--vm-color-text-muted); }
+.vm-breadcrumb__sep { color: var(--vm-color-text-muted); }
+
+/* ---- Object Detail ---- */
+.vm-object { display: grid; grid-template-columns: 1fr; gap: var(--vm-spacing-xl); }
+.vm-object__content { display: grid; grid-template-columns: 1fr auto; gap: var(--vm-spacing-xl); }
+.vm-object__title { font-family: var(--vm-font-serif); font-size: 2rem; margin: 0 0 var(--vm-spacing-md); }
+.vm-object__meta { width: 260px; background: var(--vm-color-surface); border: 1px solid var(--vm-color-border); border-radius: var(--vm-radius); padding: var(--vm-spacing-md); }
+.vm-meta-item { display: flex; flex-direction: column; padding: var(--vm-spacing-sm) 0; border-bottom: 1px solid var(--vm-color-border); }
+.vm-meta-item:last-child { border-bottom: none; }
+.vm-meta-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--vm-color-text-muted); }
+.vm-meta-value { font-weight: 500; margin-top: 2px; }
+
+/* ---- Context badges ---- */
+.vm-context-badges { display: flex; flex-wrap: wrap; gap: var(--vm-spacing-xs); margin-bottom: var(--vm-spacing-md); }
+.vm-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    background: var(--vm-color-accent-light);
+    border: 1px solid var(--vm-color-accent);
+    border-radius: 2rem;
+    font-size: 0.8rem;
+    color: var(--vm-color-accent);
+    text-decoration: none;
+}
+
+/* ---- Also-in rooms ---- */
+.vm-also-in-rooms { background: var(--vm-color-surface); padding: var(--vm-spacing-md); border-radius: var(--vm-radius); margin-top: var(--vm-spacing-lg); }
+.vm-room-links { display: flex; flex-wrap: wrap; gap: var(--vm-spacing-sm); list-style: none; margin: var(--vm-spacing-sm) 0 0; padding: 0; }
+.vm-room-links a { color: var(--vm-color-accent); text-decoration: none; }
+.vm-room-links a:hover { text-decoration: underline; }
+
+/* ---- Year ---- */
+.vm-year { font-size: 0.875rem; color: var(--vm-color-text-muted); }
+
+/* ---- Pagination ---- */
+.vm-pagination { display: flex; justify-content: center; padding: var(--vm-spacing-xl) 0; gap: var(--vm-spacing-xs); }
+.vm-pagination .page-numbers {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 36px; height: 36px; padding: 0 var(--vm-spacing-sm);
+    border: 1px solid var(--vm-color-border); border-radius: var(--vm-radius);
+    text-decoration: none; color: var(--vm-color-text); transition: all var(--vm-transition);
+}
+.vm-pagination .current { background: var(--vm-color-accent); border-color: var(--vm-color-accent); color: white; }
+.vm-pagination .page-numbers:hover:not(.current) { border-color: var(--vm-color-accent); color: var(--vm-color-accent); }

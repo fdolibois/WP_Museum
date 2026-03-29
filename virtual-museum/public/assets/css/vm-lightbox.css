@@ -1,0 +1,70 @@
+/* ============================================================
+   Virtual Museum — Lightbox
+   ============================================================ */
+
+.vm-lightbox-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.92);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+.vm-lightbox-overlay.vm-lightbox--open { opacity: 1; }
+
+.vm-lightbox {
+    position: relative;
+    max-width: 92vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.vm-lightbox img {
+    max-width: 90vw;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: var(--vm-radius);
+}
+.vm-lightbox__caption {
+    color: #eee;
+    text-align: center;
+    padding: var(--vm-spacing-sm);
+    font-size: 0.9rem;
+    max-width: 600px;
+}
+.vm-lightbox__close {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    line-height: 1;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+.vm-lightbox__close:hover { opacity: 1; }
+.vm-lightbox__prev,
+.vm-lightbox__next {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    font-size: 2rem;
+    padding: var(--vm-spacing-md);
+    cursor: pointer;
+    transition: background 0.2s;
+    border-radius: var(--vm-radius);
+}
+.vm-lightbox__prev { left: var(--vm-spacing-md); }
+.vm-lightbox__next { right: var(--vm-spacing-md); }
+.vm-lightbox__prev:hover,
+.vm-lightbox__next:hover { background: rgba(255,255,255,0.2); }

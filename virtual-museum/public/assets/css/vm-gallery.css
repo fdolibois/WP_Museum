@@ -1,0 +1,108 @@
+/* ============================================================
+   Virtual Museum — Gallery Layouts
+   ============================================================ */
+
+/* ---- Gallery Container ---- */
+.vm-gallery-page__header { margin-bottom: var(--vm-spacing-xl); }
+
+.vm-gallery { margin: var(--vm-spacing-xl) 0; }
+
+/* ---- Slider / Main View ---- */
+.vm-gallery__main-view {
+    position: relative;
+    background: #111;
+    border-radius: var(--vm-radius);
+    overflow: hidden;
+    min-height: 400px;
+}
+.vm-gallery__active-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+}
+.vm-gallery__active-item img {
+    max-width: 100%;
+    max-height: 70vh;
+    object-fit: contain;
+}
+.vm-gallery__active-caption {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    color: white;
+    padding: var(--vm-spacing-xl) var(--vm-spacing-lg) var(--vm-spacing-md);
+}
+.vm-gallery__active-caption h2 { margin: 0; font-size: 1.25rem; }
+
+/* Caption positions */
+.vm-gallery--caption-none .vm-gallery__active-caption { display: none; }
+.vm-gallery--caption-below .vm-gallery__active-caption {
+    position: static;
+    background: var(--vm-color-surface);
+    color: var(--vm-color-text);
+    border-top: 1px solid var(--vm-color-border);
+    border-radius: 0 0 var(--vm-radius) var(--vm-radius);
+}
+
+/* ---- Navigation ---- */
+.vm-gallery__nav { position: absolute; top: 50%; left: 0; right: 0; transform: translateY(-50%); display: flex; justify-content: space-between; pointer-events: none; padding: 0 var(--vm-spacing-sm); }
+.vm-gallery__prev,
+.vm-gallery__next {
+    pointer-events: auto;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: background var(--vm-transition);
+}
+.vm-gallery__prev:hover,
+.vm-gallery__next:hover { background: rgba(0,0,0,0.9); }
+
+/* ---- Filmstrip Thumbnails ---- */
+.vm-gallery__filmstrip {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding: var(--vm-spacing-sm) 0;
+    margin-top: 4px;
+}
+.vm-gallery__filmstrip::-webkit-scrollbar { height: 4px; }
+.vm-gallery__filmstrip::-webkit-scrollbar-thumb { background: var(--vm-color-accent); border-radius: 2px; }
+
+.vm-gallery__thumb {
+    flex-shrink: 0;
+    cursor: pointer;
+    opacity: 0.65;
+    transition: opacity var(--vm-transition);
+    border: 2px solid transparent;
+    border-radius: 2px;
+    overflow: hidden;
+}
+.vm-gallery__thumb:hover { opacity: 0.9; }
+.vm-gallery__thumb--active { opacity: 1; border-color: var(--vm-color-accent); }
+.vm-gallery__thumb img { width: 100px; height: 75px; object-fit: cover; display: block; }
+
+/* ---- Masonry Gallery ---- */
+.vm-gallery--masonry .vm-gallery__objects {
+    columns: 3 200px;
+    gap: var(--vm-spacing-sm);
+}
+.vm-gallery--masonry .vm-gallery-item {
+    break-inside: avoid;
+    margin-bottom: var(--vm-spacing-sm);
+    border-radius: var(--vm-radius);
+    overflow: hidden;
+}
+.vm-gallery--masonry .vm-gallery-item img { width: 100%; display: block; }
+
+/* ---- Grid Gallery ---- */
+.vm-gallery--grid .vm-gallery__objects {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--vm-spacing-sm);
+}

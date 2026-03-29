@@ -1,0 +1,51 @@
+/* ============================================================
+   Virtual Museum — Responsive
+   ============================================================ */
+
+@media (max-width: 1200px) {
+    .vm-room-grid--cols-4 { grid-template-columns: repeat(3, 1fr); }
+    .vm-vitrine--showcase { grid-template-columns: 55% 1fr 1fr; }
+}
+
+@media (max-width: 900px) {
+    .vm-room-grid--cols-4,
+    .vm-room-grid--cols-3 { grid-template-columns: repeat(2, 1fr); }
+    .vm-grid--rooms,
+    .vm-grid--galleries,
+    .vm-grid--vitrines { grid-template-columns: repeat(2, 1fr); }
+    .vm-vitrine--showcase { grid-template-columns: 1fr 1fr; }
+    .vm-vitrine--showcase .vm-vitrine__item:first-child { grid-column: 1 / -1; }
+    .vm-object__content { grid-template-columns: 1fr; }
+    .vm-object__meta { width: 100%; }
+    .vm-masonry { columns: 2; }
+    .vm-room__title { font-size: 1.8rem; }
+}
+
+@media (max-width: 600px) {
+    .vm-page { padding: var(--vm-spacing-md); }
+    .vm-room-grid--cols-4,
+    .vm-room-grid--cols-3,
+    .vm-room-grid--cols-2 { grid-template-columns: 1fr; }
+    .vm-grid--rooms,
+    .vm-grid--galleries,
+    .vm-grid--vitrines,
+    .vm-grid--objects { grid-template-columns: 1fr; }
+    .vm-vitrine--showcase { grid-template-columns: 1fr; }
+    .vm-gallery__thumb img { width: 70px; height: 55px; }
+    .vm-lightbox__prev { left: 4px; }
+    .vm-lightbox__next { right: 4px; }
+    .vm-masonry { columns: 1; }
+    .vm-relation-badge { flex-direction: column; }
+    .vm-breadcrumb__list { font-size: 0.8rem; }
+    .vm-room__title { font-size: 1.4rem; }
+}
+
+/* ---- Print ---- */
+@media print {
+    .vm-gallery__nav,
+    .vm-section-toggle::after,
+    .vm-filter-bar,
+    .vm-lightbox-overlay { display: none !important; }
+    .vm-page { max-width: 100%; padding: 0; }
+    .vm-card:hover { transform: none; box-shadow: none; }
+}

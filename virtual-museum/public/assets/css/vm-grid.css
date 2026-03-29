@@ -1,0 +1,95 @@
+/* ============================================================
+   Virtual Museum — Grid & Cards
+   ============================================================ */
+
+/* ---- Base Grid ---- */
+.vm-grid {
+    display: grid;
+    gap: var(--vm-spacing-lg);
+}
+
+.vm-grid--rooms    { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.vm-grid--galleries{ grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.vm-grid--vitrines { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.vm-grid--objects  { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.vm-grid--grid     { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+
+/* ---- Room Grid Shortcode ---- */
+.vm-room-grid { display: grid; gap: var(--vm-spacing-lg); }
+.vm-room-grid--cols-2 { grid-template-columns: repeat(2, 1fr); }
+.vm-room-grid--cols-3 { grid-template-columns: repeat(3, 1fr); }
+.vm-room-grid--cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+/* ---- Base Card ---- */
+.vm-card {
+    background: var(--vm-color-surface);
+    border: 1px solid var(--vm-color-border);
+    border-radius: var(--vm-radius);
+    overflow: hidden;
+    transition: box-shadow var(--vm-transition), transform var(--vm-transition);
+}
+.vm-card:hover {
+    box-shadow: 0 4px 20px var(--vm-color-shadow);
+    transform: translateY(-2px);
+}
+.vm-card__link { display: flex; flex-direction: column; text-decoration: none; color: inherit; height: 100%; }
+.vm-card__thumb { aspect-ratio: 4/3; overflow: hidden; }
+.vm-card__thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+.vm-card:hover .vm-card__thumb img { transform: scale(1.04); }
+.vm-card__thumb--placeholder {
+    display: flex; align-items: center; justify-content: center;
+    background: var(--vm-color-border);
+    aspect-ratio: 4/3;
+    font-size: 3rem;
+}
+.vm-card__body { padding: var(--vm-spacing-md); flex: 1; }
+.vm-card__title { font-size: 1rem; font-weight: 600; margin: 0 0 var(--vm-spacing-xs); line-height: 1.3; }
+.vm-card__excerpt { font-size: 0.85rem; color: var(--vm-color-text-muted); margin: 0; line-height: 1.5; }
+.vm-card__year { font-size: 0.8rem; color: var(--vm-color-text-muted); }
+
+/* ---- Card Counts ---- */
+.vm-card__counts { display: flex; gap: var(--vm-spacing-sm); margin-top: var(--vm-spacing-sm); flex-wrap: wrap; }
+.vm-count { font-size: 0.8rem; color: var(--vm-color-text-muted); background: var(--vm-color-bg); padding: 2px 6px; border-radius: 2rem; border: 1px solid var(--vm-color-border); }
+
+/* ---- Card: Room ---- */
+.vm-card--room { border-top: 3px solid var(--vm-room-color, var(--vm-color-accent)); }
+
+/* ---- Card: Object ---- */
+.vm-card--object { position: relative; }
+.vm-card__media-badge { position: absolute; top: var(--vm-spacing-sm); right: var(--vm-spacing-sm); background: rgba(0,0,0,0.6); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; z-index: 1; }
+
+/* ---- Filmstrip Preview (Gallery Card) ---- */
+.vm-card__filmstrip-preview { display: flex; gap: 3px; flex-wrap: wrap; margin-top: var(--vm-spacing-xs); }
+.vm-card__filmstrip-preview img { width: 50px; height: 50px; object-fit: cover; border-radius: 2px; }
+
+/* ---- Masonry ---- */
+.vm-masonry { columns: 4 220px; gap: var(--vm-spacing-md); }
+.vm-masonry .vm-card { break-inside: avoid; margin-bottom: var(--vm-spacing-md); }
+
+/* ---- Load More ---- */
+.vm-load-more-bar { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 24px 0; }
+#vm-load-more-sentinel { height: 1px; }
+.vm-btn--load-more {
+    padding: 10px 28px; border: 1px solid var(--vm-color-accent); border-radius: var(--vm-radius);
+    background: transparent; color: var(--vm-color-accent); cursor: pointer;
+    font-size: 0.9rem; transition: background 0.2s, color 0.2s;
+}
+.vm-btn--load-more:hover { background: var(--vm-color-accent); color: #fff; }
+.vm-btn--load-more:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ---- Skeleton Loading ---- */
+@keyframes vm-shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position:  400px 0; }
+}
+.vm-skeleton-block,
+.vm-skeleton-line {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 800px 100%;
+    animation: vm-shimmer 1.4s infinite linear;
+    border-radius: 3px;
+}
+.vm-card--skeleton { pointer-events: none; }
+.vm-card--skeleton .vm-card__thumb.vm-skeleton-block { aspect-ratio: 4/3; width: 100%; }
+.vm-skeleton-line { height: 14px; margin: 10px 0; width: 80%; }
+.vm-skeleton-line--short { width: 50%; }
