@@ -33,6 +33,7 @@ spl_autoload_register( function( $class ) {
     $directories = [
         VM_PLUGIN_DIR . 'includes/',
         VM_PLUGIN_DIR . 'admin/',
+        VM_PLUGIN_DIR . 'public/',
     ];
     foreach ( $directories as $dir ) {
         $file = $dir . $class_name;
