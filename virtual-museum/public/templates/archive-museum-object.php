@@ -3,50 +3,51 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 get_header();
 
+$settings    = get_option( 'vm_settings', [] );
+$per_page    = (int) ( $settings['archive_per_page'] ?? 24 );
 $vm_atts     = get_query_var( 'vm_atts', [] );
-$type        = $vm_atts['type']     ?? 'all';
-$layout      = $vm_atts['layout']   ?? 'grid';
-$per_page    = (int) ( $vm_atts['per_page'] ?? get_option( 'vm_settings', [] )['archive_per_page'] ?? 24 );
 $show_filter = ( $vm_atts['show_filter'] ?? 'yes' ) === 'yes';
-$show_search = ( $vm_atts['show_search'] ?? 'yes' ) === 'yes';
 
-$post_types = match( $type ) {
-    'rooms'    => [ 'museum_room' ],
-    'galleries'=> [ 'museum_gallery' ],
-    'vitrines' => [ 'museum_vitrine' ],
-    'objects'  => [ 'museum_object' ],
-    default    => [ 'museum_object' ],
-};
+// Museum-Startseite für Rücknavigation
+$museum_page_id  = (int) ( $settings['museum_page_id'] ?? 0 );
+$museum_page_url = $museum_page_id ? get_permalink( $museum_page_id ) : '';
 
-$child_type = match( $type ) {
-    'rooms'    => 'room',
-    'galleries'=> 'gallery',
-    'vitrines' => 'vitrine',
-    default    => 'object',
-};
-
-$paged    = max( 1, get_query_var( 'paged', 1 ) );
+// Erste Seite server-seitig laden (neueste zuerst)
 $wp_query = new WP_Query( [
-    'post_type'      => $post_types,
+    'post_type'      => 'museum_object',
     'post_status'    => 'publish',
     'posts_per_page' => $per_page,
-    'paged'          => 1,        // Always load page 1 server-side
-    'orderby'        => 'menu_order',
-    'order'          => 'ASC',
+    'paged'          => 1,
+    'orderby'        => 'date',
+    'order'          => 'DESC',
 ] );
 
-$total_pages = (int) $wp_query->max_num_pages;
+$total_objects = (int) $wp_query->found_posts;
+$total_pages   = (int) $wp_query->max_num_pages;
 ?>
-<div class="vm-archive vm-page vm-archive--<?php echo esc_attr( $layout ); ?>">
+<div class="vm-archive vm-page">
 
+    <!-- ================================================
+         HEADER mit Rücknavigation
+    ================================================ -->
     <header class="vm-archive__header">
-        <h1><?php
-        if ( is_post_type_archive() ) {
-            post_type_archive_title();
-        } else {
-            esc_html_e( 'Museum — Archiv', 'vmuseum' );
-        }
-        ?></h1>
+        <?php if ( $museum_page_url ) : ?>
+        <a href="<?php echo esc_url( $museum_page_url ); ?>" class="vm-archive__back">
+            ← <?php esc_html_e( 'Zum Museum', 'vmuseum' ); ?>
+        </a>
+        <?php endif; ?>
+
+        <div class="vm-archive__header-content">
+            <h1 class="vm-archive__title">
+                <?php esc_html_e( 'Alle Objekte', 'vmuseum' ); ?>
+                <?php if ( $total_objects ) : ?>
+                <span class="vm-archive__count"><?php echo esc_html( $total_objects ); ?></span>
+                <?php endif; ?>
+            </h1>
+            <p class="vm-archive__subtitle">
+                <?php esc_html_e( 'Neueste Objekte zuerst', 'vmuseum' ); ?>
+            </p>
+        </div>
     </header>
 
     <?php if ( $show_filter ) : ?>
@@ -54,12 +55,15 @@ $total_pages = (int) $wp_query->max_num_pages;
     <?php endif; ?>
 
     <?php if ( $wp_query->have_posts() ) : ?>
-    <div class="vm-grid vm-grid--<?php echo esc_attr( $layout ); ?>"
+
+    <!-- Endless Scroll Grid -->
+    <div class="vm-grid vm-grid--objects"
          data-vm-lazy-grid
          data-current-page="1"
          data-total-pages="<?php echo esc_attr( $total_pages ); ?>"
          data-per-page="<?php echo esc_attr( $per_page ); ?>"
-         data-child-type="<?php echo esc_attr( $child_type ); ?>">
+         data-child-type="object">
+
         <?php while ( $wp_query->have_posts() ) :
             $wp_query->the_post();
             include VM_PLUGIN_DIR . 'public/templates/partials/card-object.php';
@@ -73,6 +77,15 @@ $total_pages = (int) $wp_query->max_num_pages;
         <button id="vm-load-more-btn" class="vm-btn vm-btn--load-more" type="button">
             <?php esc_html_e( 'Mehr laden', 'vmuseum' ); ?>
         </button>
+    </div>
+    <?php endif; ?>
+
+    <!-- Rücknavigation (unten, nach dem Scrollen) -->
+    <?php if ( $museum_page_url ) : ?>
+    <div class="vm-archive__back-footer">
+        <a href="<?php echo esc_url( $museum_page_url ); ?>" class="vm-btn vm-btn--outline">
+            ← <?php esc_html_e( 'Zurück zur Museumsübersicht', 'vmuseum' ); ?>
+        </a>
     </div>
     <?php endif; ?>
 

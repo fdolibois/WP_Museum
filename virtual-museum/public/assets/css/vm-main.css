@@ -416,6 +416,60 @@
     margin-bottom: var(--vm-spacing-2xl);
 }
 
+/* ============================================================
+   Object Archive
+   ============================================================ */
+.vm-archive__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: var(--vm-color-accent);
+    text-decoration: none;
+    margin-bottom: var(--vm-spacing-md);
+}
+.vm-archive__back:hover { text-decoration: underline; }
+
+.vm-archive__header {
+    margin-bottom: var(--vm-spacing-xl);
+}
+.vm-archive__header-content {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--vm-spacing-md);
+}
+.vm-archive__title {
+    font-family: var(--vm-font-serif);
+    font-size: 2rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--vm-spacing-sm);
+}
+.vm-archive__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--vm-color-accent-light);
+    color: var(--vm-color-accent);
+    border-radius: 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 2px 14px;
+}
+.vm-archive__subtitle {
+    color: var(--vm-color-text-muted);
+    font-size: 0.9rem;
+    margin: 4px 0 0;
+}
+.vm-archive__back-footer {
+    margin-top: var(--vm-spacing-2xl);
+    padding-top: var(--vm-spacing-xl);
+    border-top: 1px solid var(--vm-color-border);
+    text-align: center;
+}
+
 /* "All objects" link */
 .vm-entrance__all-link {
     margin-top: var(--vm-spacing-lg);

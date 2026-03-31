@@ -257,8 +257,8 @@ class VM_Ajax {
                 'post_status'    => 'publish',
                 'posts_per_page' => $per_page,
                 'paged'          => $page,
-                'orderby'        => 'menu_order',
-                'order'          => 'ASC',
+                'orderby'        => 'date',
+                'order'          => 'DESC',
             ] );
             $posts       = $wp_query->posts;
             $total       = (int) $wp_query->found_posts;

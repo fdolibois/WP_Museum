@@ -3,16 +3,20 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 get_header();
 
-$gallery_id   = get_the_ID();
-$vm_atts      = get_query_var( 'vm_atts', [] );
-$mode         = $vm_atts['mode'] ?? get_post_meta( $gallery_id, 'vm_gallery_display_mode', true ) ?: 'slider';
-$caption_pos  = get_post_meta( $gallery_id, 'vm_gallery_caption_pos', true ) ?: 'below';
-$lightbox     = get_post_meta( $gallery_id, 'vm_gallery_lightbox', true );
-$objects      = VM_Relations::get_objects( 'gallery', $gallery_id );
-$room_parents = VM_Relations::get_parents( 'gallery', $gallery_id, 'room' );
-$vit_parents  = VM_Relations::get_parents( 'gallery', $gallery_id, 'vitrine' );
-$settings     = get_option( 'vm_settings', [] );
+$gallery_id    = get_the_ID();
+$settings      = get_option( 'vm_settings', [] );
+$per_page      = (int) ( $settings['archive_per_page'] ?? 12 );
+$room_parents  = VM_Relations::get_parents( 'gallery', $gallery_id, 'room' );
+$vit_parents   = VM_Relations::get_parents( 'gallery', $gallery_id, 'vitrine' );
 $context_param = sanitize_text_field( wp_unslash( $_GET['vm_context'] ?? '' ) );
+
+// Total object count for this gallery
+$total_objects = count( VM_Relations::get_objects( 'gallery', $gallery_id ) );
+$total_pages   = (int) ceil( $total_objects / $per_page );
+
+// First batch — server-rendered
+$first_batch = VM_Relations::get_children( 'gallery', $gallery_id, 'object', true );
+$first_batch = array_slice( $first_batch, 0, $per_page );
 ?>
 <div class="vm-gallery-page vm-page">
 
@@ -32,105 +36,117 @@ $context_param = sanitize_text_field( wp_unslash( $_GET['vm_context'] ?? '' ) );
 
     <div class="vm-room__layout">
 
-        <!-- Sidebar -->
+        <!-- ================================================
+             SIDEBAR
+        ================================================ -->
         <aside class="vm-room__sidebar">
             <div class="vm-room-sidebar">
 
-                <!-- Back to room -->
+                <!-- Back links -->
                 <?php foreach ( $room_parents as $room ) : ?>
-                <a href="<?php echo esc_url( add_query_arg( 'vm_context', $context_param ?: 'gallery_' . $gallery_id, get_permalink( $room->ID ) ) ); ?>" class="vm-room-sidebar__back">
+                <a href="<?php echo esc_url( add_query_arg( 'vm_context', $context_param ?: 'gallery_' . $gallery_id, get_permalink( $room->ID ) ) ); ?>"
+                   class="vm-room-sidebar__back">
                     ← <?php echo esc_html( get_the_title( $room ) ); ?>
                 </a>
-                <?php endforeach;
-                foreach ( $vit_parents as $vit ) : ?>
-                <a href="<?php echo esc_url( get_permalink( $vit->ID ) ); ?>" class="vm-room-sidebar__back" style="margin-top:.25rem">
+                <?php endforeach; ?>
+                <?php foreach ( $vit_parents as $vit ) : ?>
+                <a href="<?php echo esc_url( get_permalink( $vit->ID ) ); ?>"
+                   class="vm-room-sidebar__back" style="margin-top:.25rem">
                     ← <?php echo esc_html( get_the_title( $vit ) ); ?>
                 </a>
                 <?php endforeach; ?>
 
-                <div style="margin-top:1.5rem">
-                    <h2 style="font-family:var(--vm-font-serif);font-size:1.3rem;margin:0 0 .5rem"><?php the_title(); ?></h2>
-                    <?php if ( get_the_content() ) the_content(); ?>
+                <!-- Gallery title + description -->
+                <div class="vm-room-sidebar__section">
+                    <h2 style="font-family:var(--vm-font-serif);font-size:1.2rem;margin:0 0 .5rem"><?php the_title(); ?></h2>
+                    <?php if ( get_the_content() ) : ?>
+                        <div style="font-size:.875rem;color:var(--vm-color-text-muted)"><?php the_content(); ?></div>
+                    <?php endif; ?>
                 </div>
 
-                <?php if ( $objects ) : ?>
-                <div class="vm-room-sidebar__stat" style="margin-top:1rem">
-                    🎨 <?php printf( _n( '%d Objekt', '%d Objekte', count( $objects ), 'vmuseum' ), count( $objects ) ); ?>
+                <!-- Object count -->
+                <?php if ( $total_objects ) : ?>
+                <div class="vm-room-sidebar__stats">
+                    <span class="vm-room-sidebar__stat">
+                        🎨 <?php printf( _n( '%d Objekt', '%d Objekte', $total_objects, 'vmuseum' ), $total_objects ); ?>
+                    </span>
                 </div>
+                <?php endif; ?>
 
-                <!-- Objekt-Liste als Index -->
-                <nav class="vm-room-sidebar__section" style="margin-top:1rem">
-                    <h3 class="vm-room-sidebar__heading"><?php esc_html_e( 'Inhalt', 'vmuseum' ); ?></h3>
+                <!-- Other galleries in same rooms -->
+                <?php if ( $room_parents ) :
+                    $sibling_galleries = [];
+                    foreach ( $room_parents as $room ) {
+                        foreach ( VM_Relations::get_galleries( 'room', $room->ID ) as $g ) {
+                            if ( $g->ID !== $gallery_id ) $sibling_galleries[ $g->ID ] = $g;
+                        }
+                    }
+                    if ( $sibling_galleries ) : ?>
+                <div class="vm-room-sidebar__section">
+                    <h3 class="vm-room-sidebar__heading"><?php esc_html_e( 'Weitere Galerien', 'vmuseum' ); ?></h3>
                     <ul class="vm-room-sidebar__list">
-                        <?php foreach ( $objects as $idx => $obj ) : ?>
+                        <?php foreach ( $sibling_galleries as $sg ) : ?>
                         <li>
-                            <a href="#" class="vm-room-sidebar__link vm-gallery-jump" data-index="<?php echo esc_attr( $idx ); ?>">
-                                <span class="vm-room-sidebar__link-title"><?php echo esc_html( get_the_title( $obj ) ); ?></span>
-                                <?php $year = get_post_meta( $obj->ID, 'vm_year', true );
-                                if ( $year ) echo '<span class="vm-room-sidebar__link-meta">' . esc_html( $year ) . '</span>'; ?>
+                            <a href="<?php echo esc_url( get_permalink( $sg->ID ) ); ?>" class="vm-room-sidebar__link">
+                                <span class="vm-room-sidebar__link-title"><?php echo esc_html( get_the_title( $sg ) ); ?></span>
                             </a>
                         </li>
                         <?php endforeach; ?>
                     </ul>
-                </nav>
-                <?php endif; ?>
+                </div>
+                <?php endif; endif; ?>
 
             </div>
         </aside>
 
-        <!-- Gallery Main -->
+        <!-- ================================================
+             MAIN — Endless Scroll Object Grid
+        ================================================ -->
         <main class="vm-room__main">
 
-            <header class="vm-gallery-page__header" style="margin-bottom:1.5rem">
+            <header class="vm-gallery-page__header">
                 <h1><?php the_title(); ?></h1>
             </header>
 
-            <?php if ( $objects ) : ?>
-            <div class="vm-gallery vm-gallery--<?php echo esc_attr( $mode ); ?> vm-gallery--caption-<?php echo esc_attr( $caption_pos ); ?>"
-                 data-mode="<?php echo esc_attr( $mode ); ?>"
-                 data-lightbox="<?php echo $lightbox ? 'true' : 'false'; ?>">
+            <?php if ( $first_batch ) : ?>
+            <div class="vm-gallery-scroll"
+                 data-vm-lazy-section
+                 data-parent-type="gallery"
+                 data-parent-id="<?php echo esc_attr( $gallery_id ); ?>"
+                 data-child-type="object"
+                 data-per-page="<?php echo esc_attr( $per_page ); ?>">
 
-                <div class="vm-gallery__main-view">
-                    <?php $first = $objects[0]; ?>
-                    <div class="vm-gallery__active-item" id="vm-gallery-active">
-                        <?php if ( has_post_thumbnail( $first->ID ) ) : ?>
-                            <img src="<?php echo esc_url( get_the_post_thumbnail_url( $first->ID, 'large' ) ); ?>"
-                                 alt="<?php echo esc_attr( get_the_title( $first ) ); ?>">
-                        <?php endif; ?>
-                        <div class="vm-gallery__active-caption">
-                            <h2><?php echo esc_html( get_the_title( $first ) ); ?></h2>
-                            <?php $year = get_post_meta( $first->ID, 'vm_year', true );
-                            if ( $year ) echo '<span class="vm-year">' . esc_html( $year ) . '</span>'; ?>
-                            <a href="<?php echo esc_url( get_permalink( $first->ID ) ); ?>" class="vm-gallery__object-link">
-                                <?php esc_html_e( 'Objekt ansehen →', 'vmuseum' ); ?>
-                            </a>
-                        </div>
+                <div class="vm-section-body" style="padding:0">
+                    <div class="vm-grid vm-grid--objects"
+                         data-vm-lazy-grid
+                         data-current-page="1"
+                         data-total-pages="<?php echo esc_attr( $total_pages ); ?>"
+                         data-per-page="<?php echo esc_attr( $per_page ); ?>"
+                         data-parent-type="gallery"
+                         data-parent-id="<?php echo esc_attr( $gallery_id ); ?>"
+                         data-child-type="object">
+
+                        <?php
+                        global $post;
+                        foreach ( $first_batch as $post ) :
+                            setup_postdata( $post );
+                            include VM_PLUGIN_DIR . 'public/templates/partials/card-object.php';
+                        endforeach;
+                        wp_reset_postdata();
+                        ?>
                     </div>
-                    <div class="vm-gallery__nav">
-                        <button class="vm-gallery__prev" aria-label="<?php esc_attr_e( 'Vorheriges', 'vmuseum' ); ?>">&#8592;</button>
-                        <button class="vm-gallery__next" aria-label="<?php esc_attr_e( 'Nächstes', 'vmuseum' ); ?>">&#8594;</button>
+
+                    <?php if ( $total_pages > 1 ) : ?>
+                    <div class="vm-load-more-bar">
+                        <div id="vm-load-more-sentinel"></div>
+                        <button id="vm-load-more-btn" class="vm-btn--load-more">
+                            <?php esc_html_e( 'Mehr laden', 'vmuseum' ); ?>
+                        </button>
                     </div>
+                    <?php endif; ?>
                 </div>
-
-                <div class="vm-gallery__filmstrip">
-                    <?php foreach ( $objects as $index => $obj ) :
-                        $thumb = get_the_post_thumbnail_url( $obj->ID, [ 100, 75 ] );
-                        $ctx   = add_query_arg( 'vm_context', ( $context_param ?: 'gallery_' . $gallery_id ), get_permalink( $obj->ID ) );
-                    ?>
-                        <div class="vm-gallery__thumb<?php echo $index === 0 ? ' vm-gallery__thumb--active' : ''; ?>"
-                             data-index="<?php echo esc_attr( $index ); ?>"
-                             data-src="<?php echo esc_url( get_the_post_thumbnail_url( $obj->ID, 'large' ) ?: '' ); ?>"
-                             data-title="<?php echo esc_attr( get_the_title( $obj ) ); ?>"
-                             data-year="<?php echo esc_attr( get_post_meta( $obj->ID, 'vm_year', true ) ); ?>"
-                             data-url="<?php echo esc_url( $ctx ); ?>">
-                            <?php if ( $thumb ) : ?>
-                                <img src="<?php echo esc_url( $thumb ); ?>" alt="<?php echo esc_attr( get_the_title( $obj ) ); ?>" loading="lazy">
-                            <?php endif; ?>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-
             </div>
+
             <?php else : ?>
             <p class="vm-empty"><?php esc_html_e( 'Diese Galerie enthält noch keine Objekte.', 'vmuseum' ); ?></p>
             <?php endif; ?>
