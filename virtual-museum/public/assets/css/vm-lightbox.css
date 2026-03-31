@@ -11,9 +11,13 @@
     align-items: center;
     justify-content: center;
     opacity: 0;
+    pointer-events: none;
     transition: opacity 0.25s ease;
 }
-.vm-lightbox-overlay.vm-lightbox--open { opacity: 1; }
+.vm-lightbox-overlay.vm-lightbox--open {
+    opacity: 1;
+    pointer-events: auto;
+}
 
 .vm-lightbox {
     position: relative;

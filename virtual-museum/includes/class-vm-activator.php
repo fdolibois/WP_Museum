@@ -11,10 +11,46 @@ class VM_Activator {
         $post_types = new VM_Post_Types();
         $post_types->register();
         flush_rewrite_rules();
+
+        self::create_museum_page();
     }
 
     public static function deactivate(): void {
         flush_rewrite_rules();
+    }
+
+    /**
+     * Creates the museum entrance page if it does not yet exist.
+     * Stores the page ID in vm_settings['museum_page_id'].
+     */
+    public static function create_museum_page(): void {
+        $settings = get_option( 'vm_settings', [] );
+
+        // If a valid page already exists, skip.
+        if ( ! empty( $settings['museum_page_id'] ) ) {
+            $existing = get_post( (int) $settings['museum_page_id'] );
+            if ( $existing && $existing->post_status !== 'trash' ) {
+                return;
+            }
+        }
+
+        $page_id = wp_insert_post( [
+            'post_title'     => __( 'Virtuelles Museum', 'vmuseum' ),
+            'post_name'      => 'virtuelles-museum',
+            'post_content'   => '',
+            'post_status'    => 'publish',
+            'post_type'      => 'page',
+            'comment_status' => 'closed',
+            'ping_status'    => 'closed',
+        ] );
+
+        if ( $page_id && ! is_wp_error( $page_id ) ) {
+            // Mark it as the museum entrance page
+            update_post_meta( $page_id, '_vm_is_entrance_page', '1' );
+
+            $settings['museum_page_id'] = $page_id;
+            update_option( 'vm_settings', $settings );
+        }
     }
 
     private static function create_tables(): void {

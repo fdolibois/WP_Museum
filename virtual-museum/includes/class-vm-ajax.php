@@ -19,6 +19,10 @@ class VM_Ajax {
         // Lazy loading
         add_action( 'wp_ajax_nopriv_vm_load_objects_page', [ $this, 'load_objects_page' ] );
         add_action( 'wp_ajax_vm_load_objects_page',        [ $this, 'load_objects_page' ] );
+
+        // Featured image batch processor
+        add_action( 'wp_ajax_vm_process_images',   [ $this, 'process_images' ] );
+        add_action( 'wp_ajax_vm_pending_images',   [ $this, 'pending_images_count' ] );
     }
 
     public function add_relation(): void {
@@ -284,6 +288,78 @@ class VM_Ajax {
             'total_pages' => $total_pages,
             'total'       => $total,
         ] );
+    }
+
+    /**
+     * Returns the count of objects that have vm_import_image_url but no thumbnail.
+     */
+    public function pending_images_count(): void {
+        check_ajax_referer( 'vm_admin_nonce', 'nonce' );
+        if ( ! current_user_can( 'upload_files' ) ) { wp_send_json_error( [], 403 ); }
+
+        $count = $this->get_pending_image_ids( 0 );
+        wp_send_json_success( [ 'count' => count( $count ) ] );
+    }
+
+    /**
+     * Process one batch of pending images.
+     * Returns progress info so the client can chain calls until done.
+     */
+    public function process_images(): void {
+        check_ajax_referer( 'vm_admin_nonce', 'nonce' );
+        if ( ! current_user_can( 'upload_files' ) ) { wp_send_json_error( [], 403 ); }
+
+        $batch     = max( 1, min( 20, (int) ( $_POST['batch'] ?? 5 ) ) );
+        $pending   = $this->get_pending_image_ids( $batch );
+        $processed = 0;
+        $failed    = [];
+
+        foreach ( $pending as $post_id ) {
+            $url = get_post_meta( $post_id, 'vm_import_image_url', true );
+            if ( ! $url ) continue;
+
+            $ok = VM_Bulk_Import::sideload_featured_image( $post_id, $url );
+            if ( $ok ) {
+                $processed++;
+            } else {
+                $failed[] = $post_id;
+            }
+        }
+
+        $remaining = count( $this->get_pending_image_ids( 0 ) );
+
+        wp_send_json_success( [
+            'processed' => $processed,
+            'failed'    => $failed,
+            'remaining' => $remaining,
+            'done'      => $remaining === 0,
+        ] );
+    }
+
+    /**
+     * Returns IDs of objects with vm_import_image_url but no featured image.
+     * Pass $limit = 0 to get all.
+     */
+    private function get_pending_image_ids( int $limit ): array {
+        $args = [
+            'post_type'      => 'museum_object',
+            'post_status'    => 'publish',
+            'posts_per_page' => $limit > 0 ? $limit : -1,
+            'fields'         => 'ids',
+            'meta_query'     => [
+                'relation' => 'AND',
+                [
+                    'key'     => 'vm_import_image_url',
+                    'compare' => 'EXISTS',
+                ],
+                [
+                    'key'     => '_thumbnail_id',
+                    'compare' => 'NOT EXISTS',
+                ],
+            ],
+        ];
+
+        return ( new WP_Query( $args ) )->posts;
     }
 
     private function format_post( WP_Post $post, string $type ): array {

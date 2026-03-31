@@ -24,6 +24,7 @@ class VM_Plugin {
         new VM_Ajax();
         new VM_Rest_Api();
         new VM_Search_Index();
+        new VM_Widgets();
 
         // Admin
         if ( is_admin() ) {
@@ -38,5 +39,8 @@ class VM_Plugin {
         // Common hooks
         add_action( 'before_delete_post', [ 'VM_Relations', 'remove_all_for_post' ] );
         add_action( 'save_post',          [ 'VM_Relations', 'flush_cache' ] );
+
+        // Ensure museum entrance page exists (catches already-active installations after update)
+        add_action( 'init', [ 'VM_Activator', 'create_museum_page' ] );
     }
 }

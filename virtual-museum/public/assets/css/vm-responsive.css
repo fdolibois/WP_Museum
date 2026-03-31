@@ -7,7 +7,15 @@
     .vm-vitrine--showcase { grid-template-columns: 55% 1fr 1fr; }
 }
 
+@media (max-width: 1024px) {
+    .vm-room__layout { grid-template-columns: 220px 1fr; }
+}
+
 @media (max-width: 900px) {
+    .vm-room__layout { grid-template-columns: 1fr; }
+    .vm-room__sidebar { position: static; }
+    .vm-room-sidebar { margin-bottom: var(--vm-spacing-lg); }
+
     .vm-room-grid--cols-4,
     .vm-room-grid--cols-3 { grid-template-columns: repeat(2, 1fr); }
     .vm-grid--rooms,
@@ -20,6 +28,7 @@
     .vm-masonry { columns: 2; }
     .vm-room__title { font-size: 1.8rem; }
 }
+
 
 @media (max-width: 600px) {
     .vm-page { padding: var(--vm-spacing-md); }

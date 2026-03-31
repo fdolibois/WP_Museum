@@ -54,6 +54,10 @@ class VM_Public {
     }
 
     public function load_templates( string $template ): string {
+        if ( $this->is_museum_entrance() ) {
+            $custom = VM_PLUGIN_DIR . 'public/templates/page-museum-entrance.php';
+            if ( file_exists( $custom ) ) return $custom;
+        }
         if ( is_singular( 'museum_room' ) ) {
             $custom = VM_PLUGIN_DIR . 'public/templates/single-museum-room.php';
             if ( file_exists( $custom ) ) return $custom;
@@ -78,8 +82,16 @@ class VM_Public {
     }
 
     private function is_museum_page(): bool {
-        return is_singular( [ 'museum_room', 'museum_vitrine', 'museum_gallery', 'museum_object' ] )
+        return $this->is_museum_entrance()
+            || is_singular( [ 'museum_room', 'museum_vitrine', 'museum_gallery', 'museum_object' ] )
             || is_post_type_archive( [ 'museum_room', 'museum_vitrine', 'museum_gallery', 'museum_object' ] )
             || is_tax( 'museum_era' );
+    }
+
+    private function is_museum_entrance(): bool {
+        if ( ! is_page() ) return false;
+        $settings = get_option( 'vm_settings', [] );
+        $page_id  = (int) ( $settings['museum_page_id'] ?? 0 );
+        return $page_id > 0 && is_page( $page_id );
     }
 }

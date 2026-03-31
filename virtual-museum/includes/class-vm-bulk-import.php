@@ -91,7 +91,7 @@ class VM_Bulk_Import {
                 'object'  => [
                     update_post_meta( $post_id, 'vm_media_type', sanitize_text_field( $row['media_type'] ?? 'image' ) ),
                     update_post_meta( $post_id, 'vm_year',       (int) ( $row['year'] ?? 0 ) ?: '' ),
-                    ! empty( $row['image_url'] ) ? update_post_meta( $post_id, 'vm_import_image_url', esc_url_raw( $row['image_url'] ) ) : null,
+                    ! empty( $row['image_url'] ) ? $this->sideload_featured_image( $post_id, esc_url_raw( $row['image_url'] ) ) : null,
                 ],
                 default => null,
             };
@@ -138,6 +138,29 @@ class VM_Bulk_Import {
                 }
             }
         }
+    }
+
+    /**
+     * Download an external image and set it as the post's featured image.
+     * Stores the original URL as vm_import_image_url regardless of outcome.
+     */
+    public static function sideload_featured_image( int $post_id, string $url ): bool {
+        update_post_meta( $post_id, 'vm_import_image_url', $url );
+
+        if ( has_post_thumbnail( $post_id ) ) return true; // already set
+
+        if ( ! function_exists( 'media_sideload_image' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/media.php';
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            require_once ABSPATH . 'wp-admin/includes/image.php';
+        }
+
+        $attachment_id = media_sideload_image( $url, $post_id, null, 'id' );
+
+        if ( is_wp_error( $attachment_id ) ) return false;
+
+        set_post_thumbnail( $post_id, $attachment_id );
+        return true;
     }
 
     private function generate_report(): array {

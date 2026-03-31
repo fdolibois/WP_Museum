@@ -1,8 +1,46 @@
 <?php if ( ! defined( 'ABSPATH' ) ) exit;
 $s = get_option( 'vm_settings', [] );
+
+// Handle "recreate museum page" action
+if ( isset( $_POST['vm_recreate_page'] ) && check_admin_referer( 'vm_recreate_page' ) ) {
+    // Force recreation by clearing the stored ID
+    $s['museum_page_id'] = 0;
+    update_option( 'vm_settings', $s );
+    VM_Activator::create_museum_page();
+    $s = get_option( 'vm_settings', [] );
+    echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Museumsseite wurde neu erstellt.', 'vmuseum' ) . '</p></div>';
+}
+
+$museum_page_id = (int) ( $s['museum_page_id'] ?? 0 );
+$museum_page    = $museum_page_id ? get_post( $museum_page_id ) : null;
 ?>
 <div class="wrap vm-admin-page">
     <h1><?php esc_html_e( 'Museum Einstellungen', 'vmuseum' ); ?></h1>
+
+    <!-- Museum Entrance Page Info -->
+    <div class="vm-rel-stats" style="margin-bottom:20px">
+        <strong><?php esc_html_e( 'Museumsseite (Eingangsseite):', 'vmuseum' ); ?></strong>
+        <?php if ( $museum_page && $museum_page->post_status === 'publish' ) : ?>
+            &nbsp;
+            <a href="<?php echo esc_url( get_permalink( $museum_page_id ) ); ?>" target="_blank">
+                <?php echo esc_html( get_the_title( $museum_page_id ) ); ?>
+            </a>
+            &nbsp;|&nbsp;
+            <a href="<?php echo esc_url( get_edit_post_link( $museum_page_id ) ); ?>">
+                <?php esc_html_e( 'Seite bearbeiten', 'vmuseum' ); ?>
+            </a>
+        <?php else : ?>
+            <span style="color:#b32d2e"><?php esc_html_e( 'Nicht gefunden', 'vmuseum' ); ?></span>
+        <?php endif; ?>
+        &nbsp;&nbsp;
+        <form method="post" style="display:inline">
+            <?php wp_nonce_field( 'vm_recreate_page' ); ?>
+            <button type="submit" name="vm_recreate_page" class="button" onclick="return confirm('<?php esc_attr_e( 'Museumsseite neu erstellen?', 'vmuseum' ); ?>')">
+                <?php esc_html_e( 'Seite neu erstellen', 'vmuseum' ); ?>
+            </button>
+        </form>
+    </div>
+
     <form method="post" action="">
         <?php wp_nonce_field( 'vm_save_settings', 'vm_settings_nonce' ); ?>
         <table class="form-table">
