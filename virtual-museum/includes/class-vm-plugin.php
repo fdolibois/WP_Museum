@@ -25,6 +25,7 @@ class VM_Plugin {
         new VM_Rest_Api();
         new VM_Search_Index();
         new VM_Widgets();
+        new VM_Blocks();
 
         // Admin
         if ( is_admin() ) {

@@ -4,6 +4,21 @@
     <?php
     if ( isset( $_POST['vm_import_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['vm_import_nonce'] ) ), 'vm_bulk_import' ) && current_user_can( 'upload_files' ) ) {
         if ( ! empty( $_FILES['import_file']['tmp_name'] ) ) {
+            // B008: Sicherheitsprüfungen für den Datei-Upload
+            $upload_error = null;
+            if ( ! is_uploaded_file( $_FILES['import_file']['tmp_name'] ) ) {
+                $upload_error = __( 'Ungültige Datei-Upload-Quelle.', 'vmuseum' );
+            } elseif ( filesize( $_FILES['import_file']['tmp_name'] ) > 5 * 1024 * 1024 ) {
+                $upload_error = __( 'Datei zu groß. Maximum: 5 MB.', 'vmuseum' );
+            } else {
+                $file_type = wp_check_filetype( sanitize_file_name( $_FILES['import_file']['name'] ) );
+                if ( ! in_array( $file_type['ext'], [ 'csv', 'txt' ], true ) ) {
+                    $upload_error = __( 'Nur CSV- oder TXT-Dateien sind erlaubt.', 'vmuseum' );
+                }
+            }
+            if ( $upload_error ) {
+                echo '<div class="notice notice-error"><p>' . esc_html( $upload_error ) . '</p></div>';
+            } else {
             $importer = new VM_Bulk_Import();
             $report   = $importer->import_csv( $_FILES['import_file']['tmp_name'] );
             echo '<div class="notice notice-' . esc_attr( $report['status'] ) . '">';
@@ -16,6 +31,7 @@
                 echo '</ul>';
             }
             echo '</div>';
+            } // end upload_error check
         }
     }
     ?>

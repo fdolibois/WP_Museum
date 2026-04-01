@@ -24,19 +24,35 @@ class VM_Bulk_Import {
         return $this->generate_report();
     }
 
+    // B007: Maximale Zeilenzahl und Zellbreite begrenzen
+    private const MAX_ROWS       = 2000;
+    private const MAX_CELL_BYTES = 2000;
+
     private function parse_csv( string $file ): array {
-        $rows    = [];
-        $handle  = fopen( $file, 'r' );
+        $rows      = [];
+        $handle    = fopen( $file, 'r' );
         if ( ! $handle ) return [];
 
-        $headers = null;
-        while ( ( $line = fgetcsv( $handle, 0, ',', '"', '\\' ) ) !== false ) {
+        $headers   = null;
+        $row_count = 0;
+
+        // B007: Explizites Byte-Limit pro Zeile verhindert Speicher-Erschöpfung
+        while ( ( $line = fgetcsv( $handle, self::MAX_CELL_BYTES, ',', '"', '\\' ) ) !== false ) {
             if ( $headers === null ) {
                 $headers = array_map( 'trim', $line );
                 continue;
             }
+            // B007: Abbruch bei Überschreitung des Zeilenlimits
+            if ( $row_count >= self::MAX_ROWS ) {
+                $this->errors[] = sprintf(
+                    __( 'Import auf %d Zeilen begrenzt. Weitere Zeilen wurden übersprungen.', 'vmuseum' ),
+                    self::MAX_ROWS
+                );
+                break;
+            }
             if ( count( $line ) === count( $headers ) ) {
                 $rows[] = array_combine( $headers, array_map( 'trim', $line ) );
+                $row_count++;
             }
         }
 
@@ -141,6 +157,43 @@ class VM_Bulk_Import {
     }
 
     /**
+     * B002: Prüft ob eine URL sicher für den Server-seitigen Download ist.
+     * Blockiert private IP-Bereiche, reservierte Adressen und unsichere Schemata.
+     */
+    private static function is_safe_image_url( string $url ): bool {
+        // Nur http und https erlaubt
+        $parsed = wp_parse_url( $url );
+        if ( ! isset( $parsed['scheme'] ) || ! in_array( strtolower( $parsed['scheme'] ), [ 'http', 'https' ], true ) ) {
+            return false;
+        }
+
+        if ( ! wp_http_validate_url( $url ) ) {
+            return false;
+        }
+
+        $host = $parsed['host'] ?? '';
+        if ( ! $host ) {
+            return false;
+        }
+
+        // IP-Adresse direkt prüfen
+        if ( filter_var( $host, FILTER_VALIDATE_IP ) ) {
+            // Private und reservierte Ranges blockieren
+            if ( ! filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+                return false;
+            }
+        }
+
+        // Localhost und interne Hostnamen blockieren
+        $blocked_hosts = [ 'localhost', '::1' ];
+        if ( in_array( strtolower( $host ), $blocked_hosts, true ) ) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Download an external image and set it as the post's featured image.
      * Stores the original URL as vm_import_image_url regardless of outcome.
      */
@@ -148,6 +201,11 @@ class VM_Bulk_Import {
         update_post_meta( $post_id, 'vm_import_image_url', $url );
 
         if ( has_post_thumbnail( $post_id ) ) return true; // already set
+
+        // B002: SSRF-Schutz – URL vor dem Download validieren
+        if ( ! self::is_safe_image_url( $url ) ) {
+            return false;
+        }
 
         if ( ! function_exists( 'media_sideload_image' ) ) {
             require_once ABSPATH . 'wp-admin/includes/media.php';

@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       Virtuelles Museum
- * Plugin URI:        https://yourinsight.digital‚/
+ * Plugin URI:        https://yourinsight.digital/
  * Description:       Vollständige Verwaltung eines virtuellen Heimatmuseums mit relationalem Inhaltsmodell (Räume · Galerien · Vitrinen · Objekte).
  * Version:           2.0.0
  * Requires at least: 6.4

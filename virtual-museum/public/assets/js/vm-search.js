@@ -1,5 +1,6 @@
 /**
  * Virtual Museum — Live Search
+ * B004: XSS-Fix: DOM-API statt innerHTML + String-Konkatenation für Suchergebnisse
  */
 (function () {
     'use strict';
@@ -12,6 +13,44 @@
     const i18n    = (typeof vmPublic !== 'undefined') ? vmPublic.i18n : {};
     let timer;
 
+    // B004: Sichere Hilfsfunktion – erstellt DOM-Elemente statt HTML-Strings
+    function buildResultItem(item) {
+        const a = document.createElement('a');
+        // Nur http/https-URLs zulassen
+        const url = String(item.url || '');
+        if (/^https?:\/\//i.test(url)) {
+            a.href = url;
+        }
+        a.className = 'vm-search-result';
+
+        const thumbSpan = document.createElement('span');
+        thumbSpan.className = 'vm-search-result__thumb';
+        if (item.thumb && /^https?:\/\//i.test(String(item.thumb))) {
+            const img = document.createElement('img');
+            img.src = item.thumb;
+            img.alt = '';
+            thumbSpan.appendChild(img);
+        }
+        a.appendChild(thumbSpan);
+
+        const infoSpan = document.createElement('span');
+        infoSpan.className = 'vm-search-result__info';
+
+        const strong = document.createElement('strong');
+        strong.textContent = item.title || ''; // textContent escaped automatisch
+        infoSpan.appendChild(strong);
+
+        if (item.year) {
+            const yearSpan = document.createElement('span');
+            yearSpan.className = 'vm-year';
+            yearSpan.textContent = ' ' + item.year;
+            infoSpan.appendChild(yearSpan);
+        }
+
+        a.appendChild(infoSpan);
+        return a;
+    }
+
     input.addEventListener('input', function () {
         clearTimeout(timer);
         const q = this.value.trim();
@@ -20,7 +59,13 @@
             container.innerHTML = '';
             return;
         }
-        container.innerHTML = '<p class="vm-search-loading">' + (i18n.loading || 'Suche...') + '</p>';
+
+        // Loading-Zustand mit textContent statt innerHTML
+        container.innerHTML = '';
+        const loadingP = document.createElement('p');
+        loadingP.className = 'vm-search-loading';
+        loadingP.textContent = i18n.loading || 'Suche...';
+        container.appendChild(loadingP);
         container.hidden = false;
 
         timer = setTimeout(function () {
@@ -32,20 +77,17 @@
             fetch(ajaxUrl, { method: 'POST', body: fd })
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
+                    container.innerHTML = '';
                     if (!data.success || !data.data.results.length) {
-                        container.innerHTML = '<p class="vm-search-empty">' + (i18n.noResults || 'Keine Ergebnisse') + '</p>';
+                        const p = document.createElement('p');
+                        p.className = 'vm-search-empty';
+                        p.textContent = i18n.noResults || 'Keine Ergebnisse';
+                        container.appendChild(p);
                         return;
                     }
-                    const html = data.data.results.map(function (item) {
-                        const thumb = item.thumb ? '<img src="' + item.thumb + '" alt="">' : '';
-                        return '<a href="' + item.url + '" class="vm-search-result">' +
-                            '<span class="vm-search-result__thumb">' + thumb + '</span>' +
-                            '<span class="vm-search-result__info">' +
-                            '<strong>' + item.title + '</strong>' +
-                            (item.year ? ' <span class="vm-year">' + item.year + '</span>' : '') +
-                            '</span></a>';
-                    }).join('');
-                    container.innerHTML = html;
+                    data.data.results.forEach(function (item) {
+                        container.appendChild(buildResultItem(item));
+                    });
                 })
                 .catch(function () {
                     container.hidden = true;

@@ -107,7 +107,8 @@ class VM_Relations {
                     throw new \Exception( $valid->get_error_message() );
                 }
                 $user_id = get_current_user_id();
-                $wpdb->insert( $table, [
+                // B005: Fehler beim Insert erkennen und Transaktion abbrechen
+                $result  = $wpdb->insert( $table, [
                     'parent_type' => $parent_type,
                     'parent_id'   => $parent_id,
                     'child_type'  => $child['type'],
@@ -115,6 +116,9 @@ class VM_Relations {
                     'position'    => $child['position'] ?? $index,
                     'added_by'    => $user_id ?: null,
                 ], [ '%s', '%d', '%s', '%d', '%d', '%d' ] );
+                if ( false === $result ) {
+                    throw new \Exception( __( 'Datenbankfehler beim Speichern der Beziehung.', 'vmuseum' ) );
+                }
             }
 
             $wpdb->query( 'COMMIT' );

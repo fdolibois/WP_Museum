@@ -73,7 +73,7 @@ $rooms = get_posts( [
     <!-- ====================================================
          SEARCH
     ==================================================== -->
-    <?php if ( ! empty( $settings['enable_live_search'] ) !== false ) : // always show on entrance ?>
+    <?php if ( true ) : // B025: Suche immer auf der Eingangsseite anzeigen ?>
     <section class="vm-entrance__search-wrap">
         <div class="vm-entrance__search-inner">
             <label for="vm-live-search" class="screen-reader-text"><?php esc_html_e( 'Museum durchsuchen', 'vmuseum' ); ?></label>

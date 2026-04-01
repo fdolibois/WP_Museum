@@ -72,11 +72,24 @@ class VM_Admin {
     private function save_settings(): void {
         if ( ! current_user_can( 'manage_options' ) ) return;
         $s = get_option( 'vm_settings', [] );
-        $s['archive_per_page']       = (int) ( $_POST['archive_per_page'] ?? 24 );
-        $s['default_room_layout']    = sanitize_text_field( wp_unslash( $_POST['default_room_layout'] ?? 'sections' ) );
-        $s['default_gallery_mode']   = sanitize_text_field( wp_unslash( $_POST['default_gallery_mode'] ?? 'slider' ) );
-        $s['default_vitrine_layout'] = sanitize_text_field( wp_unslash( $_POST['default_vitrine_layout'] ?? 'showcase' ) );
-        $s['default_vitrine_theme']  = sanitize_text_field( wp_unslash( $_POST['default_vitrine_theme'] ?? 'light' ) );
+        $s['archive_per_page'] = max( 1, min( 100, (int) ( $_POST['archive_per_page'] ?? 24 ) ) );
+
+        // B012: Allowlist-Validierung – nur bekannte Werte akzeptieren
+        $room_layout_raw = sanitize_text_field( wp_unslash( $_POST['default_room_layout'] ?? '' ) );
+        $s['default_room_layout'] = in_array( $room_layout_raw, [ 'sections', 'grid', 'list' ], true )
+            ? $room_layout_raw : 'sections';
+
+        $gallery_mode_raw = sanitize_text_field( wp_unslash( $_POST['default_gallery_mode'] ?? '' ) );
+        $s['default_gallery_mode'] = in_array( $gallery_mode_raw, [ 'slider', 'grid', 'masonry' ], true )
+            ? $gallery_mode_raw : 'slider';
+
+        $vitrine_layout_raw = sanitize_text_field( wp_unslash( $_POST['default_vitrine_layout'] ?? '' ) );
+        $s['default_vitrine_layout'] = in_array( $vitrine_layout_raw, [ 'showcase', 'list', 'grid' ], true )
+            ? $vitrine_layout_raw : 'showcase';
+
+        $vitrine_theme_raw = sanitize_text_field( wp_unslash( $_POST['default_vitrine_theme'] ?? '' ) );
+        $s['default_vitrine_theme'] = in_array( $vitrine_theme_raw, [ 'light', 'dark' ], true )
+            ? $vitrine_theme_raw : 'light';
         $s['enable_lightbox']        = isset( $_POST['enable_lightbox'] );
         $s['enable_360']             = isset( $_POST['enable_360'] );
         $s['enable_breadcrumb']      = isset( $_POST['enable_breadcrumb'] );

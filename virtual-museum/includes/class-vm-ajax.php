@@ -41,6 +41,11 @@ class VM_Ajax {
             wp_send_json_error( [ 'message' => __( 'Ungültige IDs.', 'vmuseum' ) ], 400 );
         }
 
+        // B006: Post-spezifische Berechtigungsprüfung – edit_posts allein reicht nicht
+        if ( ! current_user_can( 'edit_post', $parent_id ) || ! current_user_can( 'edit_post', $child_id ) ) {
+            wp_send_json_error( [ 'message' => __( 'Keine Berechtigung für diese Beiträge.', 'vmuseum' ) ], 403 );
+        }
+
         $result = VM_Relations::add( $parent_type, $parent_id, $child_type, $child_id, $position );
 
         if ( is_wp_error( $result ) ) {
@@ -89,6 +94,11 @@ class VM_Ajax {
             wp_send_json_error( [ 'message' => __( 'Ungültige IDs.', 'vmuseum' ) ], 400 );
         }
 
+        // B006: Post-spezifische Berechtigungsprüfung
+        if ( ! current_user_can( 'edit_post', $parent_id ) || ! current_user_can( 'edit_post', $child_id ) ) {
+            wp_send_json_error( [ 'message' => __( 'Keine Berechtigung für diese Beiträge.', 'vmuseum' ) ], 403 );
+        }
+
         $result = VM_Relations::remove( $parent_type, $parent_id, $child_type, $child_id );
         VM_Search_Index::update_post( $parent_id );
         VM_Search_Index::update_post( $child_id );
@@ -108,6 +118,11 @@ class VM_Ajax {
 
         if ( ! $parent_id || ! is_array( $ordered_ids ) ) {
             wp_send_json_error( [ 'message' => __( 'Ungültige Daten.', 'vmuseum' ) ], 400 );
+        }
+
+        // B006: Post-spezifische Berechtigungsprüfung
+        if ( ! current_user_can( 'edit_post', $parent_id ) ) {
+            wp_send_json_error( [ 'message' => __( 'Keine Berechtigung für diesen Beitrag.', 'vmuseum' ) ], 403 );
         }
 
         $sanitized = [];
@@ -208,6 +223,11 @@ class VM_Ajax {
         $type       = sanitize_text_field( wp_unslash( $_GET['type'] ?? 'all' ) );
         $page       = max( 1, (int) ( $_GET['page'] ?? 1 ) );
 
+        // B011: Mindestlänge server-seitig erzwingen
+        if ( mb_strlen( $query ) < 2 ) {
+            wp_send_json_success( [ 'results' => [], 'total' => 0, 'pages' => 0, 'current' => 1 ] );
+        }
+
         $post_types = match( $type ) {
             'rooms'     => [ 'museum_room' ],
             'galleries' => [ 'museum_gallery' ],
@@ -236,7 +256,8 @@ class VM_Ajax {
 
     public function load_objects_page(): void {
         $nonce = sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) );
-        if ( $nonce && ! wp_verify_nonce( $nonce, 'vm_lazy_load' ) ) {
+        // B001: Nonce muss vorhanden UND gültig sein – leerer Nonce darf nicht durchgelassen werden
+        if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'vm_lazy_load' ) ) {
             wp_send_json_error( [], 403 );
         }
 
@@ -272,13 +293,17 @@ class VM_Ajax {
             $template = VM_PLUGIN_DIR . 'public/templates/partials/card-object.php';
             if ( $posts && file_exists( $template ) ) {
                 global $post;
-                foreach ( $posts as $post ) {
-                    setup_postdata( $post );
-                    ob_start();
-                    include $template;
-                    $html .= ob_get_clean();
+                // B009: try/finally stellt sicher, dass wp_reset_postdata() immer aufgerufen wird
+                try {
+                    foreach ( $posts as $post ) {
+                        setup_postdata( $post );
+                        ob_start();
+                        include $template;
+                        $html .= ob_get_clean();
+                    }
+                } finally {
+                    wp_reset_postdata();
                 }
-                wp_reset_postdata();
             }
         }
 

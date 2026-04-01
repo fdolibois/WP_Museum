@@ -13,6 +13,9 @@ class VM_Widgets {
     public function register(): void {
         register_widget( 'VM_Museum_Nav_Widget' );
         register_widget( 'VM_Context_Nav_Widget' );
+        register_widget( 'VM_Recent_Objects_Widget' );
+        register_widget( 'VM_Museum_Stats_Widget' );
+        register_widget( 'VM_Museum_Search_Widget' );
     }
 }
 
@@ -310,5 +313,238 @@ class VM_Context_Nav_Widget extends WP_Widget {
 
     public function update( $new, $old ): array {
         return [ 'title' => sanitize_text_field( $new['title'] ?? '' ) ];
+    }
+}
+
+
+/* ============================================================
+   Widget 3: Neueste Objekte
+   ============================================================ */
+class VM_Recent_Objects_Widget extends WP_Widget {
+
+    public function __construct() {
+        parent::__construct(
+            'vm_recent_objects',
+            __( 'VM: Neueste Objekte', 'vmuseum' ),
+            [ 'description' => __( 'Zeigt die zuletzt hinzugefügten Museumsobjekte als Linkliste.', 'vmuseum' ) ]
+        );
+    }
+
+    public function widget( $args, $instance ): void {
+        $title        = apply_filters( 'widget_title', $instance['title'] ?? __( 'Neueste Objekte', 'vmuseum' ) );
+        $count        = max( 1, (int) ( $instance['count'] ?? 5 ) );
+        $show_excerpt = ! empty( $instance['show_excerpt'] );
+
+        $posts = get_posts( [
+            'post_type'      => 'museum_object',
+            'post_status'    => 'publish',
+            'posts_per_page' => $count,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+        ] );
+
+        if ( ! $posts ) return;
+
+        echo $args['before_widget'];
+        echo $args['before_title'] . esc_html( $title ) . $args['after_title'];
+
+        echo '<ul class="vm-widget-nav__list">';
+        foreach ( $posts as $post ) {
+            echo '<li class="vm-widget-nav__item">';
+            echo '<a href="' . esc_url( get_permalink( $post->ID ) ) . '" class="vm-widget-nav__link">';
+            if ( has_post_thumbnail( $post->ID ) ) {
+                echo '<span class="vm-widget-recent__thumb">' . get_the_post_thumbnail( $post->ID, [ 40, 40 ] ) . '</span>';
+            }
+            echo '<span>';
+            echo '<span class="vm-widget-nav__link-title">' . esc_html( get_the_title( $post ) ) . '</span>';
+            $year = get_post_meta( $post->ID, 'vm_year', true );
+            if ( $year ) echo '<span class="vm-widget-nav__count"> · ' . esc_html( $year ) . '</span>';
+            if ( $show_excerpt && $post->post_excerpt ) {
+                echo '<br><small style="color:var(--vm-color-text-muted,#666)">' . esc_html( wp_trim_words( $post->post_excerpt, 8 ) ) . '</small>';
+            }
+            echo '</span></a></li>';
+        }
+        echo '</ul>';
+
+        echo $args['after_widget'];
+    }
+
+    public function form( $instance ): void {
+        $title        = $instance['title']        ?? __( 'Neueste Objekte', 'vmuseum' );
+        $count        = $instance['count']        ?? 5;
+        $show_excerpt = ! empty( $instance['show_excerpt'] );
+        ?>
+        <p>
+            <label for="<?php echo esc_attr( $this->get_field_id( 'title' ) ); ?>"><?php esc_html_e( 'Titel:', 'vmuseum' ); ?></label>
+            <input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'title' ) ); ?>"
+                   name="<?php echo esc_attr( $this->get_field_name( 'title' ) ); ?>"
+                   type="text" value="<?php echo esc_attr( $title ); ?>">
+        </p>
+        <p>
+            <label for="<?php echo esc_attr( $this->get_field_id( 'count' ) ); ?>"><?php esc_html_e( 'Anzahl:', 'vmuseum' ); ?></label>
+            <input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'count' ) ); ?>"
+                   name="<?php echo esc_attr( $this->get_field_name( 'count' ) ); ?>"
+                   type="number" min="1" max="20" value="<?php echo esc_attr( $count ); ?>">
+        </p>
+        <p>
+            <label>
+                <input type="checkbox" id="<?php echo esc_attr( $this->get_field_id( 'show_excerpt' ) ); ?>"
+                       name="<?php echo esc_attr( $this->get_field_name( 'show_excerpt' ) ); ?>" value="1"
+                       <?php checked( $show_excerpt ); ?>>
+                <?php esc_html_e( 'Beschreibung anzeigen', 'vmuseum' ); ?>
+            </label>
+        </p>
+        <?php
+    }
+
+    public function update( $new, $old ): array {
+        return [
+            'title'        => sanitize_text_field( $new['title'] ?? '' ),
+            'count'        => max( 1, (int) ( $new['count'] ?? 5 ) ),
+            'show_excerpt' => ! empty( $new['show_excerpt'] ) ? 1 : 0,
+        ];
+    }
+}
+
+
+/* ============================================================
+   Widget 4: Museum Statistiken
+   ============================================================ */
+class VM_Museum_Stats_Widget extends WP_Widget {
+
+    public function __construct() {
+        parent::__construct(
+            'vm_museum_stats',
+            __( 'VM: Statistiken', 'vmuseum' ),
+            [ 'description' => __( 'Zeigt die Anzahl der Räume, Vitrinen, Galerien und Objekte.', 'vmuseum' ) ]
+        );
+    }
+
+    public function widget( $args, $instance ): void {
+        $title = apply_filters( 'widget_title', $instance['title'] ?? __( 'Sammlung', 'vmuseum' ) );
+
+        echo $args['before_widget'];
+        echo $args['before_title'] . esc_html( $title ) . $args['after_title'];
+
+        $stats = [];
+        if ( ! empty( $instance['show_rooms'] ) )     $stats[] = [ '🚪', wp_count_posts( 'museum_room' )->publish,    __( 'Räume', 'vmuseum' ) ];
+        if ( ! empty( $instance['show_vitrines'] ) )  $stats[] = [ '🗄️', wp_count_posts( 'museum_vitrine' )->publish, __( 'Vitrinen', 'vmuseum' ) ];
+        if ( ! empty( $instance['show_galleries'] ) ) $stats[] = [ '🖼️', wp_count_posts( 'museum_gallery' )->publish, __( 'Galerien', 'vmuseum' ) ];
+        if ( ! empty( $instance['show_objects'] ) )   $stats[] = [ '🎨', wp_count_posts( 'museum_object' )->publish,  __( 'Objekte', 'vmuseum' ) ];
+
+        if ( ! $stats ) {
+            echo $args['after_widget'];
+            return;
+        }
+
+        echo '<ul style="list-style:none;margin:0;padding:0;">';
+        foreach ( $stats as [ $icon, $count, $label ] ) {
+            echo '<li style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee">';
+            echo '<span>' . $icon . ' ' . esc_html( $label ) . '</span>';
+            echo '<strong>' . esc_html( $count ) . '</strong>';
+            echo '</li>';
+        }
+        echo '</ul>';
+
+        echo $args['after_widget'];
+    }
+
+    public function form( $instance ): void {
+        $title          = $instance['title']          ?? __( 'Sammlung', 'vmuseum' );
+        // B024: Korrektur – false branch muss 0 zurückgeben (bisher immer 1)
+        $show_rooms     = ! empty( $instance['show_rooms'] )     ? 1 : 0;
+        $show_vitrines  = ! empty( $instance['show_vitrines'] )  ? 1 : 0;
+        $show_galleries = ! empty( $instance['show_galleries'] ) ? 1 : 0;
+        $show_objects   = ! empty( $instance['show_objects'] )   ? 1 : 0;
+        ?>
+        <p>
+            <label for="<?php echo esc_attr( $this->get_field_id( 'title' ) ); ?>"><?php esc_html_e( 'Titel:', 'vmuseum' ); ?></label>
+            <input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'title' ) ); ?>"
+                   name="<?php echo esc_attr( $this->get_field_name( 'title' ) ); ?>"
+                   type="text" value="<?php echo esc_attr( $title ); ?>">
+        </p>
+        <?php foreach ( [
+            'show_rooms'     => __( 'Räume', 'vmuseum' ),
+            'show_vitrines'  => __( 'Vitrinen', 'vmuseum' ),
+            'show_galleries' => __( 'Galerien', 'vmuseum' ),
+            'show_objects'   => __( 'Objekte', 'vmuseum' ),
+        ] as $key => $label ) : ?>
+        <p>
+            <label>
+                <input type="checkbox" name="<?php echo esc_attr( $this->get_field_name( $key ) ); ?>" value="1"
+                       <?php checked( ! empty( $instance[ $key ] ) || ! isset( $instance[ $key ] ) ); ?>>
+                <?php echo esc_html( $label ); ?>
+            </label>
+        </p>
+        <?php endforeach; ?>
+        <?php
+    }
+
+    public function update( $new, $old ): array {
+        return [
+            'title'          => sanitize_text_field( $new['title'] ?? '' ),
+            'show_rooms'     => ! empty( $new['show_rooms'] )     ? 1 : 0,
+            'show_vitrines'  => ! empty( $new['show_vitrines'] )  ? 1 : 0,
+            'show_galleries' => ! empty( $new['show_galleries'] ) ? 1 : 0,
+            'show_objects'   => ! empty( $new['show_objects'] )   ? 1 : 0,
+        ];
+    }
+}
+
+
+/* ============================================================
+   Widget 5: Museum Suche
+   ============================================================ */
+class VM_Museum_Search_Widget extends WP_Widget {
+
+    public function __construct() {
+        parent::__construct(
+            'vm_museum_search',
+            __( 'VM: Suche', 'vmuseum' ),
+            [ 'description' => __( 'Live-Suchfeld für das Virtuelle Museum.', 'vmuseum' ) ]
+        );
+    }
+
+    public function widget( $args, $instance ): void {
+        $title       = apply_filters( 'widget_title', $instance['title'] ?? '' );
+        $placeholder = $instance['placeholder'] ?? __( 'Museum durchsuchen …', 'vmuseum' );
+
+        echo $args['before_widget'];
+        if ( $title ) echo $args['before_title'] . esc_html( $title ) . $args['after_title'];
+
+        echo '<div style="position:relative">';
+        echo '<input type="search" id="vm-live-search" style="width:100%;padding:8px 36px 8px 12px;border:1px solid #ddd;border-radius:2rem;box-sizing:border-box;font-size:.9rem"';
+        echo ' placeholder="' . esc_attr( $placeholder ) . '" autocomplete="off">';
+        echo '<span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none">🔍</span>';
+        echo '</div>';
+        echo '<div id="vm-search-results" style="position:relative;z-index:9999" hidden></div>';
+
+        echo $args['after_widget'];
+    }
+
+    public function form( $instance ): void {
+        $title       = $instance['title']       ?? '';
+        $placeholder = $instance['placeholder'] ?? __( 'Museum durchsuchen …', 'vmuseum' );
+        ?>
+        <p>
+            <label for="<?php echo esc_attr( $this->get_field_id( 'title' ) ); ?>"><?php esc_html_e( 'Titel (optional):', 'vmuseum' ); ?></label>
+            <input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'title' ) ); ?>"
+                   name="<?php echo esc_attr( $this->get_field_name( 'title' ) ); ?>"
+                   type="text" value="<?php echo esc_attr( $title ); ?>">
+        </p>
+        <p>
+            <label for="<?php echo esc_attr( $this->get_field_id( 'placeholder' ) ); ?>"><?php esc_html_e( 'Platzhaltertext:', 'vmuseum' ); ?></label>
+            <input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'placeholder' ) ); ?>"
+                   name="<?php echo esc_attr( $this->get_field_name( 'placeholder' ) ); ?>"
+                   type="text" value="<?php echo esc_attr( $placeholder ); ?>">
+        </p>
+        <?php
+    }
+
+    public function update( $new, $old ): array {
+        return [
+            'title'       => sanitize_text_field( $new['title']       ?? '' ),
+            'placeholder' => sanitize_text_field( $new['placeholder'] ?? '' ),
+        ];
     }
 }

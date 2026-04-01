@@ -1,0 +1,58 @@
+/* ============================================================
+   Virtual Museum — Block Editor Styles
+   ============================================================ */
+
+/* Block preview wrapper */
+.wp-block[data-type^="vm/"] .components-placeholder {
+    border: 2px dashed #8B4513;
+    border-radius: 4px;
+}
+
+.wp-block[data-type^="vm/"] .components-placeholder__label {
+    color: #8B4513;
+}
+
+/* Keep ServerSideRender previews from being interactive */
+.wp-block[data-type^="vm/"] .block-editor-block-list__block {
+    pointer-events: none;
+}
+
+/* Ensure museum grids display properly in the editor */
+.editor-styles-wrapper .vm-grid {
+    display: grid;
+    gap: 1rem;
+}
+.editor-styles-wrapper .vm-grid--rooms {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+.editor-styles-wrapper .vm-grid--objects {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+.editor-styles-wrapper .vm-card {
+    background: #fff;
+    border: 1px solid #E5E1D8;
+    border-radius: 4px;
+    overflow: hidden;
+}
+.editor-styles-wrapper .vm-entrance__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+    padding: 1.5rem;
+    background: #fff;
+    border: 1px solid #E5E1D8;
+    border-radius: 8px;
+}
+.editor-styles-wrapper .vm-entrance__stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 80px;
+}
+.editor-styles-wrapper .vm-entrance__stat-num {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #8B4513;
+}
